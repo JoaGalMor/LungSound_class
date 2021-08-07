@@ -13,10 +13,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class CNN:
-    def __init__(self,mfcc_shape,croma_shape,melSpec_shape):
+    def __init__(self,mfcc_shape,croma_shape,melspec_shape,contrast_shape,tonnetz_shape):
         self.mfcc_shape=mfcc_shape
         self.croma_shape = croma_shape
-        self.mspec_shape=melSpec_shape
+        self.mspec_shape=melspec_shape
+        self.contrast_shape = contrast_shape
+        self.tonnetz_shape = tonnetz_shape
+
     def create_net(self,chronic_yn,features):
         print('Creating Net...')
         mfcc_input = keras.layers.Input(shape=(self.mfcc_shape[0], self.mfcc_shape[1], 1), name="mfccInput")
@@ -44,27 +47,30 @@ class CNN:
 
         croma_input = keras.layers.Input(shape=(self.croma_shape[0], self.croma_shape[1], 1),
                                          name="cromaInput")
-        x_croma_1 = keras.layers.Conv2D(64, 5, strides=(1, 3), padding='same')(croma_input)
+
+        x_croma_1 = keras.layers.Conv2D(64, 2, strides=(1, 3), padding='same')(croma_input)
         x_croma_2 = keras.layers.BatchNormalization()(x_croma_1)
         x_croma_3 = keras.layers.Activation(keras.activations.relu)(x_croma_2)
         x_croma_4 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_croma_3)
 
-        x_croma_5 = keras.layers.Conv2D(64, 3, strides=(1, 2), padding='same')(x_croma_4)
+        x_croma_5 = keras.layers.Conv2D(96, 2, strides=(1, 3), padding='same')(x_croma_4)
         x_croma_6 = keras.layers.BatchNormalization()(x_croma_5)
         x_croma_7 = keras.layers.Activation(keras.activations.relu)(x_croma_6)
-        x_croma_8 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_croma_7)
+        # x_croma_8 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_croma_7)
+        #
+        # x_croma_9 = keras.layers.Conv2D(96, 2, padding='same')(x_croma_8)
+        # x_croma_10 = keras.layers.BatchNormalization()(x_croma_9)
+        # x_croma_11 = keras.layers.Activation(keras.activations.relu)(x_croma_10)
+        # x_croma_12 = keras.layers.MaxPooling2D()(x_croma_11)
 
-        x_croma_9 = keras.layers.Conv2D(96, 3, padding='same')(x_croma_8)
-        x_croma_10 = keras.layers.BatchNormalization()(x_croma_9)
-        x_croma_11 = keras.layers.Activation(keras.activations.relu)(x_croma_10)
-        x_croma_12 = keras.layers.MaxPooling2D()(x_croma_11)
 
-        x_croma_13 = keras.layers.Conv2D(96, 3, padding='same')(x_croma_12)
-        x_croma_14 = keras.layers.BatchNormalization()(x_croma_13)
-        x_croma_15 = keras.layers.Activation(keras.activations.relu)(x_croma_14)
-        croma_output = keras.layers.GlobalMaxPooling2D()(x_croma_15)
+        # x_croma_13 = keras.layers.Conv2D(96, 3, padding='same')(x_croma_12)
+        # x_croma_14 = keras.layers.BatchNormalization()(x_croma_13)
+        # x_croma_15 = keras.layers.Activation(keras.activations.relu)(x_croma_14)
+        croma_output = keras.layers.GlobalMaxPooling2D()(x_croma_7)
 
         croma_model = keras.Model(croma_input, croma_output, name="cromaModel")
+
 
         mspec_input = keras.layers.Input(shape=(self.mspec_shape[0], self.mspec_shape[1], 1),
                                          name="mspecInput")
@@ -90,6 +96,35 @@ class CNN:
 
         mspec_model = keras.Model(mspec_input, mspec_output, name="mspecModel")
 
+        contrast_input = keras.layers.Input(shape=(self.contrast_shape[0], self.contrast_shape[1], 1), name="contrastInput")
+        x_contrast_1 = keras.layers.Conv2D(64, 2, strides=(1, 3), padding='same')(contrast_input)
+        x_contrast_2 = keras.layers.BatchNormalization()(x_contrast_1)
+        x_contrast_3 = keras.layers.Activation(keras.activations.relu)(x_contrast_2)
+        x_contrast_4 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_contrast_3)
+
+        x_contrast_5 = keras.layers.Conv2D(64, 2, strides=(1, 3), padding='same')(x_contrast_4)
+        x_contrast_6 = keras.layers.BatchNormalization()(x_contrast_5)
+        x_contrast_7 = keras.layers.Activation(keras.activations.relu)(x_contrast_6)
+
+        contrast_output = keras.layers.GlobalMaxPooling2D()(x_contrast_7)
+
+        contrast_model = keras.Model(contrast_input, contrast_output, name="contrastModel")
+
+
+        tonnetz_input = keras.layers.Input(shape=(self.tonnetz_shape[0], self.tonnetz_shape[1], 1), name="tonnetzInput")
+        x_tonnetz_1 = keras.layers.Conv2D(64, 2, strides=(1, 1), padding='same')(tonnetz_input)
+        x_tonnetz_2 = keras.layers.BatchNormalization()(x_tonnetz_1)
+        x_tonnetz_3 = keras.layers.Activation(keras.activations.relu)(x_tonnetz_2)
+        x_tonnetz_4 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_tonnetz_3)
+
+        x_tonnetz_5 = keras.layers.Conv2D(64, 2, strides=(1, 1), padding='same')(x_tonnetz_4)
+        x_tonnetz_6 = keras.layers.BatchNormalization()(x_tonnetz_5)
+        x_tonnetz_7 = keras.layers.Activation(keras.activations.relu)(x_tonnetz_6)
+        tonnetz_output = keras.layers.GlobalMaxPooling2D()(x_tonnetz_7)
+
+        tonnetz_model = keras.Model(tonnetz_input, tonnetz_output, name="tonnetzModel")
+
+
         input_mfcc = keras.layers.Input(shape=(self.mfcc_shape[0], self.mfcc_shape[1], 1), name="mfcc")
         mfcc = mfcc_model(input_mfcc)
 
@@ -99,7 +134,12 @@ class CNN:
         input_mspec = keras.layers.Input(shape=(self.mspec_shape[0], self.mspec_shape[1], 1), name="mspec")
         mspec = mspec_model(input_mspec)
 
-        #concat = keras.layers.concatenate([mfcc, croma, mspec])
+        input_contrast = keras.layers.Input(shape=(self.contrast_shape[0], self.contrast_shape[1], 1), name="contrast")
+        contrast = contrast_model(input_contrast)
+
+        input_tonnetz = keras.layers.Input(shape=(self.tonnetz_shape[0], self.tonnetz_shape[1], 1), name="tonnetz")
+        tonnetz = tonnetz_model(input_tonnetz)
+
         features_concat=[]
         for feature in eval(features):
             features_concat.append(eval(feature))
