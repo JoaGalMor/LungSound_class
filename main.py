@@ -12,8 +12,10 @@ dt.perform_feature_engineering(data_final)
 
 
 net=CNN(dt.mfcc_shape,dt.croma_shape,dt.mSpec_shape)
-net.create_net(chronic_yn=False)
-history=net.run_net(dt,epochs=7)
+features="['croma', 'mfcc']"
+net.create_net(chronic_yn=False,features=features)
+
+history=net.run_net(dt,epochs=45,features=features)
 
 
 

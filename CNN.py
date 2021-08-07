@@ -7,7 +7,7 @@ import os
 import datetime
 import sklearn
 from datetime import datetime
-
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -16,7 +16,8 @@ class CNN:
         self.mfcc_shape=mfcc_shape
         self.croma_shape = croma_shape
         self.mSpec_shape=melSpec_shape
-    def create_net(self,chronic_yn):
+    def create_net(self,chronic_yn,features):
+        print('Creating Net...')
         mfcc_input = keras.layers.Input(shape=(self.mfcc_shape[0], self.mfcc_shape[1], 1), name="mfccInput")
         x_mfcc_1 = keras.layers.Conv2D(64, 5, strides=(1, 3), padding='same')(mfcc_input)
         x_mfcc_2 = keras.layers.BatchNormalization()(x_mfcc_1)
@@ -97,7 +98,12 @@ class CNN:
         input_mSpec = keras.layers.Input(shape=(self.mSpec_shape[0], self.mSpec_shape[1], 1), name="mspec")
         mSpec = mSpec_model(input_mSpec)
 
-        concat = keras.layers.concatenate([mfcc, croma, mSpec])
+        #concat = keras.layers.concatenate([mfcc, croma, mSpec])
+        features_concat=[]
+        for feature in eval(features):
+            features_concat.append(eval(feature))
+
+        concat=keras.layers.concatenate(features_concat)
         hidden = keras.layers.Dense(256, activation='relu')(concat)
         hidden = keras.layers.Dropout(0.6)(hidden)
         hidden = keras.layers.Dense(128, activation='relu')(hidden)
@@ -116,30 +122,46 @@ class CNN:
 
         # keras.utils.plot_model(net,  to_file=model_file, show_shapes=True)
 
+        input_features=['input_'+i for i in eval(features)]
+
         if chronic_yn == False:
-            net = keras.Model([input_mfcc, input_croma, input_mSpec], output, name="Net")
+            net = keras.Model(input_features, output, name="Net")
         else:
-            net = keras.Model([input_mfcc, input_croma, input_mSpec], output_chronic, name="Net")
+            net = keras.Model(input_features, output_chronic, name="Net")
+
         self.net=net
         self.chronic_yn=chronic_yn
 
-    def run_net(self, parameters,epochs):
+    def run_net(self, parameters,epochs,features):
 
         self.net.compile(loss='sparse_categorical_crossentropy', optimizer='nadam', metrics=['accuracy'])
         K.set_value(self.net.optimizer.learning_rate, 0.001)
 
         my_callbacks = [
-            tf.keras.callbacks.EarlyStopping(patience=10,monitor='val_loss'),
+            tf.keras.callbacks.EarlyStopping(patience=10,monitor='val_accuracy'),
             tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1,
                                       patience=4, min_lr=0.00001,mode='min')
         ]
+        print('Running net algorithm...')
+        start=time.time()
+        train_set=[]
+        test_set=[]
+        val_set=[]
+        for feature in eval(features):
+            evaluation_str_train='parameters.'+feature+'_train'
+            evaluation_str_val = 'parameters.' + feature + '_val'
+            evaluation_str_test= 'parameters.' + feature + '_test'
+            train_set.append(eval(evaluation_str_train))
+            test_set.append(eval(evaluation_str_test))
+            val_set.append(eval(evaluation_str_val))
+
 
         history = self.net.fit(
-            [parameters.mfcc_train, parameters.croma_train, parameters.mSpec_train],
+            eval(str(train_set)),
             parameters.ytrain,
-            validation_data=([parameters.mfcc_val, parameters.croma_val, parameters.mSpec_val], parameters.yval),
+            validation_data=(eval(str(val_set)), parameters.yval),
             epochs=epochs, verbose=1,callbacks=my_callbacks)
-
+        end=time.time()
         acc = self.net.evaluate({"mfcc": parameters.mfcc_test, "croma": parameters.croma_test, "mspec": parameters.mSpec_test}, parameters.ytest.values)
 
         y_pred = self.net.predict({"mfcc": parameters.mfcc_test, "croma": parameters.croma_test, "mspec": parameters.mSpec_test})
@@ -197,7 +219,9 @@ class CNN:
         df_history['type']=self.chronic_yn
         df_history['test_loss'] = acc[0]
         df_history['test_accuracy']=acc[1]
+        df_history['delay']=end-start
+        df_history['n_epochs']=epochs
 
-        df_history.to_csv(path_saving+'/df_history.csv')
+        df_history.to_csv(path_saving+'/df_history.csv',sep=';')
 
         return history
