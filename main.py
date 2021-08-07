@@ -11,11 +11,11 @@ dt=DataTreatment()
 dt.perform_feature_engineering(data_final)
 
 
-net=CNN(dt.mfcc_shape,dt.croma_shape,dt.mSpec_shape)
-features="['croma', 'mfcc']"
-net.create_net(chronic_yn=False,features=features)
-
-history=net.run_net(dt,epochs=45,features=features)
+net=CNN(dt.mfcc_shape,dt.croma_shape,dt.mspec_shape)
+features=["['croma', 'mfcc']","['croma', 'mfcc','mspec']"]
+for feature in features:
+    net.create_net(chronic_yn=False,features=feature)
+    history=net.run_net(dt,epochs=30,features=feature)
 
 
 

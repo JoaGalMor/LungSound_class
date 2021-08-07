@@ -4,9 +4,10 @@ import tensorflow as tf
 import pandas as pd
 from utils import *
 import os
-import datetime
-import sklearn
 from datetime import datetime
+import sklearn
+
+from datetime import datetime as dt
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ class CNN:
     def __init__(self,mfcc_shape,croma_shape,melSpec_shape):
         self.mfcc_shape=mfcc_shape
         self.croma_shape = croma_shape
-        self.mSpec_shape=melSpec_shape
+        self.mspec_shape=melSpec_shape
     def create_net(self,chronic_yn,features):
         print('Creating Net...')
         mfcc_input = keras.layers.Input(shape=(self.mfcc_shape[0], self.mfcc_shape[1], 1), name="mfccInput")
@@ -65,9 +66,9 @@ class CNN:
 
         croma_model = keras.Model(croma_input, croma_output, name="cromaModel")
 
-        mSpec_input = keras.layers.Input(shape=(self.mSpec_shape[0], self.mSpec_shape[1], 1),
-                                         name="mSpecInput")
-        x = keras.layers.Conv2D(64, 5, strides=(2, 3), padding='same')(mSpec_input)
+        mspec_input = keras.layers.Input(shape=(self.mspec_shape[0], self.mspec_shape[1], 1),
+                                         name="mspecInput")
+        x = keras.layers.Conv2D(64, 5, strides=(2, 3), padding='same')(mspec_input)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.Activation(keras.activations.relu)(x)
         x = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x)
@@ -85,9 +86,9 @@ class CNN:
         x = keras.layers.Conv2D(96, 3, padding='same')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.Activation(keras.activations.relu)(x)
-        mSpec_output = keras.layers.GlobalMaxPooling2D()(x)
+        mspec_output = keras.layers.GlobalMaxPooling2D()(x)
 
-        mSpec_model = keras.Model(mSpec_input, mSpec_output, name="mSpecModel")
+        mspec_model = keras.Model(mspec_input, mspec_output, name="mspecModel")
 
         input_mfcc = keras.layers.Input(shape=(self.mfcc_shape[0], self.mfcc_shape[1], 1), name="mfcc")
         mfcc = mfcc_model(input_mfcc)
@@ -95,10 +96,10 @@ class CNN:
         input_croma = keras.layers.Input(shape=(self.croma_shape[0], self.croma_shape[1], 1), name="croma")
         croma = croma_model(input_croma)
 
-        input_mSpec = keras.layers.Input(shape=(self.mSpec_shape[0], self.mSpec_shape[1], 1), name="mspec")
-        mSpec = mSpec_model(input_mSpec)
+        input_mspec = keras.layers.Input(shape=(self.mspec_shape[0], self.mspec_shape[1], 1), name="mspec")
+        mspec = mspec_model(input_mspec)
 
-        #concat = keras.layers.concatenate([mfcc, croma, mSpec])
+        #concat = keras.layers.concatenate([mfcc, croma, mspec])
         features_concat=[]
         for feature in eval(features):
             features_concat.append(eval(feature))
@@ -121,8 +122,10 @@ class CNN:
         # model_file='C:/Users/Joaquin/BIG_DATA_analysis_master/TFM/modelo.png'
 
         # keras.utils.plot_model(net,  to_file=model_file, show_shapes=True)
+        input_features=[]
+        for feature in eval(features):
+            input_features.append(eval('input_'+feature))
 
-        input_features=['input_'+i for i in eval(features)]
 
         if chronic_yn == False:
             net = keras.Model(input_features, output, name="Net")
@@ -157,14 +160,19 @@ class CNN:
 
 
         history = self.net.fit(
-            eval(str(train_set)),
+            train_set,
             parameters.ytrain,
-            validation_data=(eval(str(val_set)), parameters.yval),
+            validation_data=(val_set, parameters.yval),
             epochs=epochs, verbose=1,callbacks=my_callbacks)
         end=time.time()
-        acc = self.net.evaluate({"mfcc": parameters.mfcc_test, "croma": parameters.croma_test, "mspec": parameters.mSpec_test}, parameters.ytest.values)
 
-        y_pred = self.net.predict({"mfcc": parameters.mfcc_test, "croma": parameters.croma_test, "mspec": parameters.mSpec_test})
+        test_dict={}
+        for feature in eval(features):
+            str_eval="parameters."+feature+"_test"
+            test_dict[feature]=eval(str_eval)
+        acc = self.net.evaluate(test_dict, parameters.ytest.values)
+
+        y_pred = self.net.predict(test_dict)
 
         matrix = sklearn.metrics.confusion_matrix(parameters.ytest.values, y_pred.argmax(axis=1))
 
@@ -172,10 +180,13 @@ class CNN:
         cm_perc = matrix / cm_sum.astype(float) * 100
 
         date_and_time=datetime.now().isoformat(sep='_',timespec='minutes').replace(':','-')
-        path_saving=path_experiments+'/'+date_and_time
+        features_saving=''
+        for feature in eval(features):
+            features_saving=features_saving+'_'+str(feature)
+        path_saving=path_experiments+'/'+date_and_time+features_saving
         os.mkdir(path_saving)
 
-        plt.figure(figsize=(9, 6))
+        plt.figure(figsize=(7, 5))
         for key in ['val_accuracy', 'accuracy']:
             plt.plot(history.history[key], label=key)
         plt.legend()
@@ -185,7 +196,7 @@ class CNN:
         plt.gca().set_ylim(0.2, 1.1)
         plt.savefig(path_saving + '/history_accuracy.png')
 
-        plt.figure(figsize=(9, 6))
+        plt.figure(figsize=(7,5))
         for key in ['val_loss', 'loss']:
             plt.plot(history.history[key], label=key)
         plt.xlabel('Epoch')
@@ -215,12 +226,17 @@ class CNN:
         df_history=pd.DataFrame()
         for parameter in history.history:
             df_history[parameter]=history.history[parameter]
-
-        df_history['type']=self.chronic_yn
+        if self.chronic_yn==True:
+            df_history['type']="Chronic"
+        else:
+            df_history['type'] = "Disease"
         df_history['test_loss'] = acc[0]
         df_history['test_accuracy']=acc[1]
-        df_history['delay']=end-start
+        time_format = '%S'
+
+        df_history['delay (min)']=np.round((end-start)/60,2)
         df_history['n_epochs']=epochs
+        df_history['features']=features
 
         df_history.to_csv(path_saving+'/df_history.csv',sep=';')
 
