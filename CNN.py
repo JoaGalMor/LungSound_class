@@ -232,22 +232,24 @@ class CNN:
             plt.plot(history.history[key], label=key)
         plt.legend()
         plt.xlabel('Epoch')
-        plt.ylabel('Loss')
+        plt.ylabel('Accuracy')
         plt.grid(True)
+        plt.title('Accuracy evolution:'+ features_saving.replace('_',' '))
         plt.gca().set_ylim(0.2, 1.1)
-        plt.savefig(path_saving + '/history_accuracy.png')
+        plt.savefig(path_saving + '/history_accuracy'+features_saving+'.png')
 
         plt.figure(figsize=(7,5))
         for key in ['val_loss', 'loss']:
             plt.plot(history.history[key], label=key)
         plt.xlabel('Epoch')
-        plt.ylabel('Accuracy')
+        plt.ylabel('Loss')
         plt.legend()
         plt.grid(True)
+        plt.title('Loss evolution:'+ features_saving.replace('_',' '))
         plt.gca().set_ylim(0, 1.8)
-        plt.savefig(path_saving + '/history_loss.png')
+        plt.savefig(path_saving + '/history_loss'+features_saving+'.png')
 
-        fig, ax = plt.subplots(figsize=(8, 8))
+        fig, ax = plt.subplots(figsize=(7, 5))
         ax.matshow(cm_perc, cmap=plt.cm.Blues, alpha=0.9)
         ax.set_xticks(range(len(list(dict_diseases_numbers.keys()))))
         ax.xaxis.set_ticklabels(list(dict_diseases_numbers.keys()))
@@ -255,13 +257,13 @@ class CNN:
         ax.yaxis.set_ticklabels(list(dict_diseases_numbers.keys()))
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
-                ax.text(x=j, y=i, s=np.round(cm_perc[i, j], 2), va='center', ha='center', size='xx-large')
+                ax.text(x=j, y=i, s=np.round(cm_perc[i, j], 2), va='center', ha='center')
 
         plt.xlabel('Predictions', fontsize=18)
         plt.ylabel('Actuals', fontsize=18)
-        plt.title('Confusion Matrix', fontsize=18)
+        plt.title('Confusion Matrix:'+features_saving.replace('_',' '), fontsize=18)
         plt.tight_layout()
-        plt.savefig(path_saving + '/matr_normal.png')
+        plt.savefig(path_saving + '/matr_normal'+features_saving+'.png')
 
 
         df_history=pd.DataFrame()
@@ -278,6 +280,6 @@ class CNN:
         df_history['n_epochs']=epochs
         df_history['features']=features
 
-        df_history.to_csv(path_saving+'/df_history.csv',sep=';')
+        df_history.to_csv(path_saving+'/df_history'+features_saving+'.csv',sep=';')
 
         return history
