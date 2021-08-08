@@ -48,38 +48,37 @@ class CNN:
         croma_input = keras.layers.Input(shape=(self.croma_shape[0], self.croma_shape[1], 1),
                                          name="cromaInput")
 
-        x_croma_1 = keras.layers.Conv2D(64, 2, strides=(1, 3), padding='same')(croma_input)
+        x_croma_1 = keras.layers.Conv2D(64, 5, strides=(1, 3), padding='same')(croma_input)
         x_croma_2 = keras.layers.BatchNormalization()(x_croma_1)
         x_croma_3 = keras.layers.Activation(keras.activations.relu)(x_croma_2)
         x_croma_4 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_croma_3)
 
-        x_croma_5 = keras.layers.Conv2D(96, 2, strides=(1, 3), padding='same')(x_croma_4)
+        x_croma_5 = keras.layers.Conv2D(64, 3, strides=(1, 2), padding='same')(x_croma_4)
         x_croma_6 = keras.layers.BatchNormalization()(x_croma_5)
         x_croma_7 = keras.layers.Activation(keras.activations.relu)(x_croma_6)
-        # x_croma_8 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_croma_7)
-        #
-        # x_croma_9 = keras.layers.Conv2D(96, 2, padding='same')(x_croma_8)
-        # x_croma_10 = keras.layers.BatchNormalization()(x_croma_9)
-        # x_croma_11 = keras.layers.Activation(keras.activations.relu)(x_croma_10)
-        # x_croma_12 = keras.layers.MaxPooling2D()(x_croma_11)
+        x_croma_8 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_croma_7)
 
+        x_croma_9 = keras.layers.Conv2D(96, 3, padding='same')(x_croma_8)
+        x_croma_10 = keras.layers.BatchNormalization()(x_croma_9)
+        x_croma_11 = keras.layers.Activation(keras.activations.relu)(x_croma_10)
+        x_croma_12 = keras.layers.MaxPooling2D()(x_croma_11)
 
-        # x_croma_13 = keras.layers.Conv2D(96, 3, padding='same')(x_croma_12)
-        # x_croma_14 = keras.layers.BatchNormalization()(x_croma_13)
-        # x_croma_15 = keras.layers.Activation(keras.activations.relu)(x_croma_14)
-        croma_output = keras.layers.GlobalMaxPooling2D()(x_croma_7)
+        x_croma_13 = keras.layers.Conv2D(96, 3, padding='same')(x_croma_12)
+        x_croma_14 = keras.layers.BatchNormalization()(x_croma_13)
+        x_croma_15 = keras.layers.Activation(keras.activations.relu)(x_croma_14)
+        croma_output = keras.layers.GlobalMaxPooling2D()(x_croma_15)
 
         croma_model = keras.Model(croma_input, croma_output, name="cromaModel")
 
 
         mspec_input = keras.layers.Input(shape=(self.mspec_shape[0], self.mspec_shape[1], 1),
                                          name="mspecInput")
-        x = keras.layers.Conv2D(64, 5, strides=(2, 3), padding='same')(mspec_input)
+        x = keras.layers.Conv2D(64, 5, strides=(1, 3), padding='same')(mspec_input)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.Activation(keras.activations.relu)(x)
         x = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x)
 
-        x = keras.layers.Conv2D(64, 3, strides=(2, 2), padding='same')(x)
+        x = keras.layers.Conv2D(64, 3, strides=(1, 2), padding='same')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.Activation(keras.activations.relu)(x)
         x = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x)
@@ -112,12 +111,12 @@ class CNN:
 
 
         tonnetz_input = keras.layers.Input(shape=(self.tonnetz_shape[0], self.tonnetz_shape[1], 1), name="tonnetzInput")
-        x_tonnetz_1 = keras.layers.Conv2D(64, 2, strides=(1, 1), padding='same')(tonnetz_input)
+        x_tonnetz_1 = keras.layers.Conv2D(64, 2, strides=(1, 3), padding='same')(tonnetz_input)
         x_tonnetz_2 = keras.layers.BatchNormalization()(x_tonnetz_1)
         x_tonnetz_3 = keras.layers.Activation(keras.activations.relu)(x_tonnetz_2)
         x_tonnetz_4 = keras.layers.MaxPooling2D(pool_size=2, padding='valid')(x_tonnetz_3)
 
-        x_tonnetz_5 = keras.layers.Conv2D(64, 2, strides=(1, 1), padding='same')(x_tonnetz_4)
+        x_tonnetz_5 = keras.layers.Conv2D(64, 2, strides=(1, 3), padding='same')(x_tonnetz_4)
         x_tonnetz_6 = keras.layers.BatchNormalization()(x_tonnetz_5)
         x_tonnetz_7 = keras.layers.Activation(keras.activations.relu)(x_tonnetz_6)
         tonnetz_output = keras.layers.GlobalMaxPooling2D()(x_tonnetz_7)
@@ -181,9 +180,7 @@ class CNN:
         K.set_value(self.net.optimizer.learning_rate, 0.001)
 
         my_callbacks = [
-            tf.keras.callbacks.EarlyStopping(patience=10,monitor='val_accuracy'),
-            tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1,
-                                      patience=4, min_lr=0.00001,mode='min')
+            tf.keras.callbacks.EarlyStopping(patience=3,monitor='val_accuracy',restore_best_weights=True)
         ]
         print('Running net algorithm...')
         start=time.time()
@@ -203,7 +200,7 @@ class CNN:
             train_set,
             parameters.ytrain,
             validation_data=(val_set, parameters.yval),
-            epochs=epochs, verbose=1,callbacks=my_callbacks)
+            epochs=epochs, verbose=1)
         end=time.time()
 
         test_dict={}
@@ -223,7 +220,11 @@ class CNN:
         features_saving=''
         for feature in eval(features):
             features_saving=features_saving+'_'+str(feature)
-        path_saving=path_experiments+'/'+date_and_time+features_saving
+
+        if self.chronic_yn==True:
+            path_saving=path_experiments+'/'+date_and_time+features_saving+'_chronic_'+str(epochs)
+        else:
+            path_saving = path_experiments + '/' + date_and_time + features_saving + '_diseases_'+str(epochs)
         os.mkdir(path_saving)
 
         plt.figure(figsize=(7, 5))
@@ -272,7 +273,6 @@ class CNN:
             df_history['type'] = "Disease"
         df_history['test_loss'] = acc[0]
         df_history['test_accuracy']=acc[1]
-        time_format = '%S'
 
         df_history['delay (min)']=np.round((end-start)/60,2)
         df_history['n_epochs']=epochs

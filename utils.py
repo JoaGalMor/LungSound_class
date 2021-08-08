@@ -7,7 +7,7 @@ directory_path='C:/Users/Joaquin/BIG_DATA_analysis_master/TFM/'
 
 patient_data=pd.read_csv(patient_path,sep=';',names=['ID','disease'])
 
-path_processed="C:/Users/Joaquin/BIG_DATA_analysis_master/TFM/processed_audio_files"
+path_processed="C:/Users/Joaquin/BIG_DATA_analysis_master/TFM/processed_audio_files/"
 path_noised='C:/Users/Joaquin/BIG_DATA_analysis_master/TFM/noised_audio_files_2'
 path_shifted='C:/Users/Joaquin/BIG_DATA_analysis_master/TFM/shifted_audio_files_2'
 path_experiments='C:/Users/Joaquin/BIG_DATA_analysis_master/TFM/experiments'
