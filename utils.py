@@ -20,6 +20,9 @@ CNN_data=directory_path+'data_CNN/'
 dict_diseases_numbers = {"COPD": 0, "Healthy": 1, "URTI": 2, "Bronchiectasis": 3, "Pneumonia": 4,
                          "Bronchiolitis": 5}
 
+dict_diseases_reduced = ["COPD", "Healthy", "URTI", "Bronch.", "Pneum.",
+                         "Bronchiol."]
+
 dict_diseases_numbers_chronic = {"Healthy": 0, "Chronic": 1, "Non_chronic": 2}
 
 files_plots={'COPD':'106_2b1_Pr_mc_LittC2SE','URTI':'188_1b1_Tc_sc_Meditron',

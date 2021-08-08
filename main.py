@@ -13,8 +13,8 @@ dt.perform_feature_engineering(data_final)
 
 net=CNN(dt.mfcc_shape,dt.croma_shape,dt.mspec_shape,dt.contrast_shape,dt.tonnetz_shape)
 
-features=["['mfcc']","['mfcc','croma']","['mfcc','contrast']","['mfcc','tonnetz']","['mspec','tonnetz']","['mspec']","['mspec','mfcc']","['mspec','chroma']"]
-epochs=[40,45,40,40,40,40,40,40]
+features=["['mfcc','contrast']","['mfcc','tonnetz']","['mspec','tonnetz']","['mspec']","['mspec','mfcc']","['mspec','chroma']"]
+epochs=[45,45,45,45,45,45]
 for feature,n_epochs in zip(features,epochs):
     net.create_net(chronic_yn=False,features=feature)
     history=net.run_net(dt,epochs=n_epochs,features=feature)

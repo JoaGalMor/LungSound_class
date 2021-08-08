@@ -252,8 +252,10 @@ class CNN:
         fig, ax = plt.subplots(figsize=(7, 5))
         ax.matshow(cm_perc, cmap=plt.cm.Blues, alpha=0.9)
         ax.set_xticks(range(len(list(dict_diseases_numbers.keys()))))
-        ax.xaxis.set_ticklabels(list(dict_diseases_numbers.keys()))
+
+        ax.xaxis.set_ticklabels(dict_diseases_reduced)
         ax.set_yticks(range(len(list(dict_diseases_numbers.keys()))))
+
         ax.yaxis.set_ticklabels(list(dict_diseases_numbers.keys()))
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
